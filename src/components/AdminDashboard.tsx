@@ -63,6 +63,7 @@ import {
   KeyRound,
   FileSpreadsheet,
   CheckCircle,
+  RefreshCw,
   Megaphone,
   PanelLeft,
   Upload,
@@ -335,7 +336,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         if (details.uploadDate) {
           setVideoFormUploadDate(details.uploadDate);
         }
-        showNotification('YouTube video details auto-extracted!');
+        if (details.duration) {
+          setVideoFormDuration(details.duration);
+        }
+        const viewsMsg = details.viewsCount ? `${Number(details.viewsCount).toLocaleString()} views` : '';
+        const dateMsg = details.uploadDate ? `Uploaded: ${details.uploadDate}` : '';
+        const info = [viewsMsg, dateMsg].filter(Boolean).join(' • ');
+        showNotification(info ? `YouTube details extracted (${info})` : 'YouTube video details auto-extracted!');
       } else {
         // Direct browser oEmbed fallback
         const videoId = extractYouTubeId(targetUrl);
@@ -353,6 +360,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       console.error('Failed to auto-fetch YouTube details', err);
     } finally {
       setFetchingYtDetails(false);
+    }
+  };
+
+  const handleSyncVideoWithYouTube = async (recipe: RecipeVideo) => {
+    if (!recipe.youtubeUrl && !recipe.youtubeVideoId) return;
+    const url = recipe.youtubeUrl || `https://www.youtube.com/watch?v=${recipe.youtubeVideoId}`;
+    try {
+      showNotification(`Syncing live data from YouTube for "${recipe.title}"...`);
+      const res = await fetch('/api/youtube/details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const details = await res.json();
+        const updatedVideo: RecipeVideo = {
+          ...recipe,
+          title: details.title || recipe.title,
+          viewsCount: details.viewsCount || recipe.viewsCount,
+          uploadDate: details.uploadDate || recipe.uploadDate,
+          duration: details.duration || recipe.duration
+        };
+        await saveRecipeToDb(updatedVideo);
+        showNotification(`Synced: ${updatedVideo.viewsCount.toLocaleString()} views • ${updatedVideo.uploadDate}`);
+      }
+    } catch (err) {
+      console.error('Failed to sync video details', err);
+      showNotification('Failed to sync live data');
     }
   };
 
@@ -1689,17 +1725,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </td>
                         <td className="p-4 font-bold text-gray-700">{recipe.difficulty}</td>
                         <td className="p-4 text-gray-500">{recipe.prepTime} prep / {recipe.cookTime} cook</td>
-                        <td className="p-4 text-right space-x-2">
+                        <td className="p-4 text-right space-x-1.5">
+                          <button
+                            onClick={() => handleSyncVideoWithYouTube(recipe)}
+                            className="p-2 text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors inline-flex"
+                            title="Sync live views & upload date with YouTube"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => handleStartEditVideo(recipe)}
-                            className="p-2 text-gray-600 hover:text-[#FF5F1F] hover:bg-[#FF5F1F]/10 rounded-full transition-colors"
+                            className="p-2 text-gray-600 hover:text-[#FF5F1F] hover:bg-[#FF5F1F]/10 rounded-full transition-colors inline-flex"
                             title="Edit Video"
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteVideo(recipe.id, recipe.title)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors inline-flex"
                             title="Delete Video"
                           >
                             <Trash2 className="w-4 h-4" />

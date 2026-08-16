@@ -7,27 +7,61 @@ interface ExtractRecipeParams {
   language: 'hindi' | 'english';
 }
 
+export interface ClientYouTubeMetadata {
+  title?: string;
+  author?: string;
+  thumbnail?: string;
+  viewsCount?: number;
+  uploadDate?: string;
+  duration?: string;
+}
+
 /**
- * Fetches basic YouTube video metadata using the public oEmbed API if available.
+ * Fetches YouTube video metadata using the backend details endpoint or public oEmbed API.
  */
-export async function fetchClientYouTubeMetadata(urlOrId: string): Promise<{ title?: string; author?: string; thumbnail?: string }> {
+export async function fetchClientYouTubeMetadata(urlOrId: string): Promise<ClientYouTubeMetadata> {
+  const videoId = extractYouTubeId(urlOrId);
+  if (!videoId) return {};
+  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
   try {
-    const videoId = extractYouTubeId(urlOrId);
-    if (!videoId) return {};
-    const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const res = await fetch('/api/youtube/details', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: watchUrl })
+    });
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
+      const data = await res.json();
+      return {
+        title: data.title,
+        author: data.channelName,
+        thumbnail: data.thumbnailUrl || getYouTubeThumbnail(videoId),
+        viewsCount: data.viewsCount,
+        uploadDate: data.uploadDate,
+        duration: data.duration
+      };
+    }
+  } catch (e) {
+    // Fall back to oEmbed
+  }
+
+  try {
     const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(watchUrl)}`);
     if (res.ok) {
       const data = await res.json();
       return {
         title: data.title,
         author: data.author_name,
-        thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+        thumbnail: getYouTubeThumbnail(videoId)
       };
     }
   } catch (e) {
     // Ignore client oembed errors
   }
-  return {};
+  return {
+    thumbnail: getYouTubeThumbnail(videoId)
+  };
 }
 
 /**
@@ -38,7 +72,7 @@ export function synthesizeFallbackRecipe(
   prompt: string,
   ytUrl: string,
   language: 'hindi' | 'english',
-  ytMeta?: { title?: string; author?: string; thumbnail?: string }
+  ytMeta?: ClientYouTubeMetadata
 ): RecipeVideo {
   const isHindi = language === 'hindi' || /[\u0900-\u097F]/.test(prompt);
   const videoId = extractYouTubeId(ytUrl || prompt || '3AAdKl1UYZs');
@@ -60,7 +94,7 @@ export function synthesizeFallbackRecipe(
       categoryId: 'cat-quick',
       categoryName: 'स्पेशल कुकिंग रेसिपी',
       thumbnailUrl: ytMeta?.thumbnail || getYouTubeThumbnail(videoId),
-      duration: '10:00',
+      duration: ytMeta?.duration || '10:00',
       difficulty: 'Medium',
       prepTime: '15 मिनट',
       cookTime: '20 मिनट',
@@ -68,8 +102,8 @@ export function synthesizeFallbackRecipe(
       calories: 480,
       tags: ['हिंदी रेसिपी', 'शेफ स्पेशल', 'यूट्यूब ट्यूटोरियल'],
       rating: 4.9,
-      viewsCount: 145000,
-      uploadDate: new Date().toLocaleDateString('hi-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
+      viewsCount: ytMeta?.viewsCount || 145000,
+      uploadDate: ytMeta?.uploadDate || new Date().toLocaleDateString('hi-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
       downloadsCount: 18,
       chefNote: 'बेहतरीन स्वाद और खस्तापन के लिए मध्यम आंच पर पकाएं तथा ताज़े मसालों का उपयोग करें।',
       createdAt: new Date().toISOString().split('T')[0],
@@ -101,7 +135,7 @@ export function synthesizeFallbackRecipe(
     categoryId: 'cat-quick',
     categoryName: 'Chef Masterclass',
     thumbnailUrl: ytMeta?.thumbnail || getYouTubeThumbnail(videoId),
-    duration: '10:00',
+    duration: ytMeta?.duration || '10:00',
     difficulty: 'Medium',
     prepTime: '15 mins',
     cookTime: '20 mins',
@@ -109,8 +143,8 @@ export function synthesizeFallbackRecipe(
     calories: 480,
     tags: ['Masterclass', 'Video Recipe', 'Quick Meals'],
     rating: 4.9,
-    viewsCount: 145000,
-    uploadDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    viewsCount: ytMeta?.viewsCount || 145000,
+    uploadDate: ytMeta?.uploadDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     downloadsCount: 18,
     chefNote: 'Season in layers and maintain steady cooking temperature for maximum flavor extraction.',
     createdAt: new Date().toISOString().split('T')[0],

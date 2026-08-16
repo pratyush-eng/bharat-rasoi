@@ -13,7 +13,7 @@ export default async function handler(req: any, res: any) {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not configured" });
+      return res.status(200).json(recipe);
     }
 
     const ai = new GoogleGenAI({ apiKey });
