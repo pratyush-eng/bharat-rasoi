@@ -1,0 +1,6 @@
+{
+  "name": "Chef Studio - Recipe Channel & Cookbook Hub",
+  "description": "An interactive video recipe channel organizer featuring YouTube video tutorials, category filters, latest video player with cooking step chapters & ingredient checklist, downloadable custom cookbook PDF builder, and an admin dashboard for video management and download analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

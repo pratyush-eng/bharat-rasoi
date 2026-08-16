@@ -1,0 +1,165 @@
+{
+  "entities": {
+    "recipes": {
+      "title": "Recipes",
+      "description": "Video tutorials and recipe details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "youtubeUrl": { "type": "string" },
+        "youtubeVideoId": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "description": { "type": "string" },
+        "prepTime": { "type": "string" },
+        "cookTime": { "type": "string" },
+        "servings": { "type": "string" },
+        "difficulty": { "type": "string" },
+        "calories": { "type": "number" },
+        "categoryId": { "type": "string" },
+        "categoryName": { "type": "string" },
+        "ingredients": { "type": "array" },
+        "instructions": { "type": "array" },
+        "tags": { "type": "array" },
+        "featured": { "type": "boolean" },
+        "viewsCount": { "type": "number" },
+        "downloadsCount": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title"]
+    },
+    "categories": {
+      "title": "Categories",
+      "description": "Cooking categories",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" },
+        "videoCount": { "type": "number" }
+      },
+      "required": ["id", "name"]
+    },
+    "cookbooks": {
+      "title": "Cookbooks",
+      "description": "Downloadable recipe book bundles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "recipeIds": { "type": "array" },
+        "recipeCount": { "type": "number" },
+        "pageCount": { "type": "number" },
+        "category": { "type": "string" },
+        "featured": { "type": "boolean" },
+        "badgeText": { "type": "string" },
+        "downloadCount": { "type": "number" }
+      },
+      "required": ["id", "title"]
+    },
+    "download_logs": {
+      "title": "Download Logs",
+      "description": "Logs of user PDF and cookbook downloads",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "itemType": { "type": "string" },
+        "itemId": { "type": "string" },
+        "itemName": { "type": "string" },
+        "device": { "type": "string" },
+        "location": { "type": "string" }
+      },
+      "required": ["id", "timestamp"]
+    },
+    "settings": {
+      "title": "Site Settings",
+      "description": "Global channel site configuration",
+      "type": "object",
+      "properties": {
+        "siteName": { "type": "string" },
+        "tagline": { "type": "string" },
+        "accentColor": { "type": "string" },
+        "logoIcon": { "type": "string" },
+        "customLogoUrl": { "type": "string" },
+        "youtubeUrl": { "type": "string" },
+        "instagramUrl": { "type": "string" },
+        "twitterUrl": { "type": "string" },
+        "announcementText": { "type": "string" },
+        "showAnnouncement": { "type": "boolean" },
+        "heroAutoSlideEnabled": { "type": "boolean" },
+        "heroAutoSlideSpeed": { "type": "number" },
+        "heroSlideDirection": { "type": "string" },
+        "siteVisits": { "type": "number" }
+      }
+    },
+    "portal_updates": {
+      "title": "Portal Updates",
+      "description": "Separate table storing all website title, logo, and portal configuration update records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "siteName": { "type": "string" },
+        "tagline": { "type": "string" },
+        "accentColor": { "type": "string" },
+        "logoIcon": { "type": "string" },
+        "customLogoUrl": { "type": "string" },
+        "youtubeUrl": { "type": "string" },
+        "instagramUrl": { "type": "string" },
+        "twitterUrl": { "type": "string" },
+        "announcementText": { "type": "string" },
+        "showAnnouncement": { "type": "boolean" },
+        "heroAutoSlideEnabled": { "type": "boolean" },
+        "heroAutoSlideSpeed": { "type": "number" },
+        "heroSlideDirection": { "type": "string" },
+        "siteVisits": { "type": "number" }
+      },
+      "required": ["id", "updatedAt", "siteName"]
+    },
+    "subscribers": {
+      "title": "Subscribers",
+      "description": "Email list of subscribers for push notifications and newsletters",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "subscribedAt": { "type": "string" },
+        "status": { "type": "string" },
+        "source": { "type": "string" }
+      },
+      "required": ["id", "email"]
+    },
+    "notifications": {
+      "title": "Push Notifications",
+      "description": "Broadcast push notifications history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "linkUrl": { "type": "string" },
+        "recipeId": { "type": "string" },
+        "sentAt": { "type": "string" },
+        "sentBy": { "type": "string" },
+        "recipientCount": { "type": "number" }
+      },
+      "required": ["id", "title", "message"]
+    },
+    "admin": {
+      "title": "Admin Credentials",
+      "description": "Portal admin configuration",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "password": { "type": "string" }
+      }
+    }
+  }
+}

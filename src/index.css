@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --brand-accent: #FF5F1F;
+  --brand-accent-hover: #e04e12;
+  --brand-accent-light: rgba(255, 95, 31, 0.1);
+  --brand-accent-border: rgba(255, 95, 31, 0.25);
+}
+
+.bg-brand-accent {
+  background-color: var(--brand-accent) !important;
+}
+
+.text-brand-accent {
+  color: var(--brand-accent) !important;
+}
+
+.border-brand-accent {
+  border-color: var(--brand-accent) !important;
+}
+
+.fill-brand-accent {
+  fill: var(--brand-accent) !important;
+}
+
+.bg-brand-accent-light {
+  background-color: var(--brand-accent-light) !important;
+}
+
+.border-brand-accent-light {
+  border-color: var(--brand-accent-border) !important;
+}
+
+.hover\:bg-brand-accent:hover {
+  background-color: var(--brand-accent) !important;
+}
+
+.hover\:text-brand-accent:hover {
+  color: var(--brand-accent) !important;
+}
+
+.hover\:border-brand-accent:hover {
+  border-color: var(--brand-accent) !important;
+}
+
+.focus\:border-brand-accent:focus {
+  border-color: var(--brand-accent) !important;
+}
