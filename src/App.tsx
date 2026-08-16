@@ -32,6 +32,7 @@ import {
   incrementSiteVisitsInDb
 } from './lib/firebase';
 import { downloadRecipePDF } from './utils/pdfGenerator';
+import { updateAppFavicon } from './utils/favicon';
 import { Header } from './components/Header';
 import { ChannelHero } from './components/ChannelHero';
 import { CategoryBar } from './components/CategoryBar';
@@ -78,6 +79,16 @@ export default function App() {
       }
     });
   }, []);
+
+  // Synchronize browser favicon dynamically with uploaded logo or branding icon & accent color
+  useEffect(() => {
+    updateAppFavicon({
+      customLogoUrl: siteSettings.customLogoUrl,
+      logoIcon: siteSettings.logoIcon,
+      accentColor: siteSettings.accentColor,
+      siteName: siteSettings.siteName
+    });
+  }, [siteSettings.customLogoUrl, siteSettings.logoIcon, siteSettings.accentColor, siteSettings.siteName]);
 
   // Increment site visits count once per browser session safely without overwriting site settings
   useEffect(() => {

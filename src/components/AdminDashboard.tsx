@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RecipeVideo, Category, RecipeBookBundle, DownloadLog, SiteSettings, AdminCredentials, Subscriber, PushNotification, PortalUpdate } from '../types';
 import { extractYouTubeId, getYouTubeThumbnail } from '../utils/youtube';
+import { updateAppFavicon } from '../utils/favicon';
 import {
   saveRecipeToDb,
   deleteRecipeFromDb,
@@ -174,6 +175,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSaveBranding = async (e: React.FormEvent) => {
     e.preventDefault();
     await saveSiteSettingsToDb(tempBranding, 'Admin Portal');
+    updateAppFavicon({
+      customLogoUrl: tempBranding.customLogoUrl,
+      logoIcon: tempBranding.logoIcon,
+      accentColor: tempBranding.accentColor,
+      siteName: tempBranding.siteName
+    });
     showNotification('Website Branding & Customization Settings Saved Successfully to Portal Updates Table!');
   };
 
@@ -189,7 +196,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        setTempBranding(prev => ({ ...prev, customLogoUrl: reader.result as string }));
+        const logoDataUrl = reader.result as string;
+        setTempBranding(prev => ({ ...prev, customLogoUrl: logoDataUrl }));
+        updateAppFavicon({
+          customLogoUrl: logoDataUrl,
+          logoIcon: tempBranding.logoIcon,
+          accentColor: tempBranding.accentColor,
+          siteName: tempBranding.siteName
+        });
         showNotification('Custom Logo Uploaded! Click "Save Changes" below to publish.');
       }
     };
@@ -1046,7 +1060,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       {tempBranding.customLogoUrl && (
                         <button
                           type="button"
-                          onClick={() => setTempBranding({ ...tempBranding, customLogoUrl: '' })}
+                          onClick={() => {
+                            setTempBranding({ ...tempBranding, customLogoUrl: '' });
+                            updateAppFavicon({
+                              customLogoUrl: '',
+                              logoIcon: tempBranding.logoIcon,
+                              accentColor: tempBranding.accentColor,
+                              siteName: tempBranding.siteName
+                            });
+                          }}
                           className="text-[11px] text-red-500 hover:text-red-600 font-bold hover:underline flex items-center gap-1.5 bg-red-50 border border-red-200 px-3 py-1.5 rounded-full transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1119,7 +1141,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <input
                               type="url"
                               value={tempBranding.customLogoUrl || ''}
-                              onChange={(e) => setTempBranding({ ...tempBranding, customLogoUrl: e.target.value })}
+                              onChange={(e) => {
+                                const url = e.target.value;
+                                setTempBranding({ ...tempBranding, customLogoUrl: url });
+                                updateAppFavicon({
+                                  customLogoUrl: url,
+                                  logoIcon: tempBranding.logoIcon,
+                                  accentColor: tempBranding.accentColor,
+                                  siteName: tempBranding.siteName
+                                });
+                              }}
                               placeholder="https://example.com/my-logo.png"
                               className="w-full bg-[#FAF9F6] border border-[#E5E5E1] rounded-xl pl-10 pr-4 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#FF5F1F] font-mono"
                             />
@@ -1149,7 +1180,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <button
                             key={opt.id}
                             type="button"
-                            onClick={() => setTempBranding({ ...tempBranding, logoIcon: opt.id })}
+                            onClick={() => {
+                              setTempBranding({ ...tempBranding, logoIcon: opt.id });
+                              updateAppFavicon({
+                                customLogoUrl: tempBranding.customLogoUrl,
+                                logoIcon: opt.id,
+                                accentColor: tempBranding.accentColor,
+                                siteName: tempBranding.siteName
+                              });
+                            }}
                             className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all ${
                               isSel
                                 ? 'bg-[#FF5F1F] text-white border-[#FF5F1F] shadow-md'
@@ -1176,7 +1215,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <button
                         key={c.hex}
                         type="button"
-                        onClick={() => setTempBranding({ ...tempBranding, accentColor: c.hex })}
+                        onClick={() => {
+                          setTempBranding({ ...tempBranding, accentColor: c.hex });
+                          updateAppFavicon({
+                            customLogoUrl: tempBranding.customLogoUrl,
+                            logoIcon: tempBranding.logoIcon,
+                            accentColor: c.hex,
+                            siteName: tempBranding.siteName
+                          });
+                        }}
                         className={`px-3 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 border transition-all ${
                           tempBranding.accentColor === c.hex
                             ? 'border-[#1A1A1A] ring-2 ring-offset-2 ring-[#FF5F1F] scale-105'
@@ -1194,7 +1241,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <input
                       type="color"
                       value={tempBranding.accentColor}
-                      onChange={(e) => setTempBranding({ ...tempBranding, accentColor: e.target.value })}
+                      onChange={(e) => {
+                        const col = e.target.value;
+                        setTempBranding({ ...tempBranding, accentColor: col });
+                        updateAppFavicon({
+                          customLogoUrl: tempBranding.customLogoUrl,
+                          logoIcon: tempBranding.logoIcon,
+                          accentColor: col,
+                          siteName: tempBranding.siteName
+                        });
+                      }}
                       className="w-10 h-10 rounded-xl cursor-pointer border border-[#E5E5E1]"
                     />
                     <span className="font-mono text-xs font-bold bg-white px-3 py-1.5 rounded-xl border border-[#E5E5E1]">
@@ -1441,6 +1497,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     twitterUrl: upd.twitterUrl,
                                     contactEmail: upd.contactEmail,
                                     siteVisits: upd.siteVisits
+                                  });
+                                  updateAppFavicon({
+                                    customLogoUrl: upd.customLogoUrl,
+                                    logoIcon: upd.logoIcon,
+                                    accentColor: upd.accentColor,
+                                    siteName: upd.siteName
                                   });
                                   showNotification(`Loaded version from ${upd.updatedAt}! Click "Save All" to publish.`);
                                 }}
