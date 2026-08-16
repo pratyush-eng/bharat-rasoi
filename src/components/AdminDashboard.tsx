@@ -251,7 +251,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: v.youtubeUrl })
           });
-          if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (res.ok && contentType.includes('application/json')) {
             const details = await res.json();
             if (details.viewsCount || details.uploadDate) {
               const updatedVideo: RecipeVideo = {
@@ -319,7 +320,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: targetUrl })
       });
-      if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         const details = await res.json();
         if (details.title) {
           setVideoFormTitle(details.title);
@@ -334,6 +336,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           setVideoFormUploadDate(details.uploadDate);
         }
         showNotification('YouTube video details auto-extracted!');
+      } else {
+        // Direct browser oEmbed fallback
+        const videoId = extractYouTubeId(targetUrl);
+        if (videoId) {
+          fetch(`https://noembed.com/embed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}`)
+            .then(r => r.json())
+            .then(data => {
+              if (data.title) setVideoFormTitle(data.title);
+              showNotification('Video title extracted from YouTube!');
+            })
+            .catch(() => {});
+        }
       }
     } catch (err) {
       console.error('Failed to auto-fetch YouTube details', err);

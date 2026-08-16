@@ -241,7 +241,7 @@ app.post("/api/gemini/extract-recipe", async (req, res) => {
 - Provide 5-7 sequential, easy-to-follow cooking steps with clear instructions and chef tips. Do NOT return generic placeholders.`;
 
     const response = await callGeminiWithRetry(ai, {
-      model: "gemini-3.6-flash",
+      model: "gemini-3.7-flash",
       contents: `You are an expert master chef for YouTube cooking channels. Analyze this cooking video title and details: ${contextInput}.
 ${langInstruction}
 Return ONLY valid JSON matching this exact structure:
@@ -324,7 +324,7 @@ app.post("/api/gemini/translate-recipe", async (req, res) => {
     const lang = targetLanguage || 'hindi';
 
     const response = await callGeminiWithRetry(ai, {
-      model: "gemini-3.6-flash",
+      model: "gemini-3.7-flash",
       contents: `You are an expert culinary translator. Translate this entire recipe object into ${lang === 'hindi' ? 'Hindi Devanagari script (हिंदी)' : 'English'}.
 Translate the title, description, categoryName, chefNote, ingredients (names, amounts), and steps (titles, instructions, tips) into natural, authentic food terminology.
 Original Recipe JSON: ${JSON.stringify(recipe)}.

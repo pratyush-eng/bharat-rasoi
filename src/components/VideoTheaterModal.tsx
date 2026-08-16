@@ -71,12 +71,14 @@ export const VideoTheaterModal: React.FC<VideoTheaterModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ recipe, targetLanguage: 'hindi' })
       });
-      if (!response.ok) {
-        throw new Error('Translation failed');
+      const contentType = response.headers.get('content-type') || '';
+      if (response.ok && contentType.includes('application/json')) {
+        const translated = await response.json();
+        setRecipe(translated);
+        confetti({ particleCount: 40, spread: 60 });
+      } else {
+        console.warn('Translate endpoint not returning JSON, keeping original recipe.');
       }
-      const translated = await response.json();
-      setRecipe(translated);
-      confetti({ particleCount: 40, spread: 60 });
     } catch (err) {
       console.error('Translation error:', err);
     } finally {
@@ -95,10 +97,18 @@ export const VideoTheaterModal: React.FC<VideoTheaterModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: recipe.youtubeUrl })
       })
-        .then(res => res.json())
+        .then(res => {
+          const contentType = res.headers.get('content-type') || '';
+          if (res.ok && contentType.includes('application/json')) {
+            return res.json();
+          }
+          return null;
+        })
         .then(data => {
-          if (data.viewsCount) setLiveViews(data.viewsCount);
-          if (data.uploadDate) setLiveUploadDate(data.uploadDate);
+          if (data) {
+            if (data.viewsCount) setLiveViews(data.viewsCount);
+            if (data.uploadDate) setLiveUploadDate(data.uploadDate);
+          }
         })
         .catch(err => console.error("Failed to fetch live YT details:", err));
     }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RecipeVideo } from '../types';
 import { extractYouTubeId, getYouTubeThumbnail } from '../utils/youtube';
+import { extractRecipeWithGemini } from '../utils/recipeExtractor';
 import {
   Sparkles,
   X,
@@ -40,57 +41,17 @@ export const GeminiRecipeModal: React.FC<GeminiRecipeModalProps> = ({
     setError(null);
 
     try {
-      const response = await fetch('/api/gemini/extract-recipe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ promptText, youtubeUrl, language: selectedLang })
+      const fullRecipe = await extractRecipeWithGemini({
+        promptText,
+        youtubeUrl,
+        language: selectedLang
       });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to extract recipe details.');
-      }
-
-      const data = await response.json();
-
-      const videoId = data.youtubeVideoId || extractYouTubeId(youtubeUrl || promptText || '3AAdKl1UYZs');
-      const finalYoutubeUrl = data.youtubeUrl || (youtubeUrl ? (youtubeUrl.startsWith('http') ? youtubeUrl : `https://www.youtube.com/watch?v=${videoId}`) : `https://www.youtube.com/watch?v=${videoId}`);
-
-      const fullRecipe: RecipeVideo = {
-        id: `rec-ai-${Date.now()}`,
-        title: data.title || promptText,
-        description: data.description || (selectedLang === 'hindi' ? 'एआई द्वारा निर्मित स्टेप-बाय-स्टेप रेसिपी गाइड' : 'Auto-generated recipe structured by Gemini AI.'),
-        youtubeUrl: finalYoutubeUrl,
-        youtubeVideoId: videoId,
-        categoryId: 'cat-quick',
-        categoryName: data.categoryName || (selectedLang === 'hindi' ? 'स्पेशल कुकिंग रेसिपी' : 'Quick 15-Min Meals'),
-        thumbnailUrl: data.thumbnailUrl || getYouTubeThumbnail(videoId),
-        duration: '10:00',
-        difficulty: data.difficulty || 'Medium',
-        prepTime: data.prepTime || '15 mins',
-        cookTime: data.cookTime || '20 mins',
-        servings: data.servings || 4,
-        calories: data.calories || 520,
-        tags: data.tags || (selectedLang === 'hindi' ? ['हिंदी रेसिपी', 'शेफ स्टूडियो'] : ['AI Generated', 'Chef Studio']),
-        rating: 4.9,
-        viewsCount: typeof data.viewsCount === 'number' ? data.viewsCount : 125000,
-        uploadDate: data.uploadDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        downloadsCount: 12,
-        chefNote: data.chefNote || (selectedLang === 'hindi' ? 'वीडियो वॉइस ट्यूटोरियल से निकाली गई खास टिप' : 'Chef tip auto-extracted from tutorial.'),
-        createdAt: new Date().toISOString().split('T')[0],
-        ingredients: data.ingredients || [
-          { id: 'i-ai-1', name: selectedLang === 'hindi' ? 'मुख्य सामग्री' : 'Main ingredient', amount: '250g', category: 'Produce' }
-        ],
-        steps: data.steps || [
-          { stepNumber: 1, timestampSeconds: 0, title: selectedLang === 'hindi' ? 'कदम 1' : 'Step 1', instruction: selectedLang === 'hindi' ? 'वीडियो के निर्देशों का पालन करें।' : 'Follow video directions.' }
-        ]
-      };
 
       onRecipeGenerated(fullRecipe);
       onClose();
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Something went wrong while generating the recipe.');
+      console.error('Error generating recipe:', err);
+      setError(err?.message || 'Failed to extract recipe. Please try again.');
     } finally {
       setLoading(false);
     }
