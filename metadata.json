@@ -1,6 +1,6 @@
 {
-  "name": "Chef Studio - Recipe Channel & Cookbook Hub",
-  "description": "An interactive video recipe channel organizer featuring YouTube video tutorials, category filters, latest video player with cooking step chapters & ingredient checklist, downloadable custom cookbook PDF builder, and an admin dashboard for video management and download analytics.",
+  "name": "Brasoi - Recipe Channel & Cookbook Hub",
+  "description": "An interactive culinary video and cookbook portal for Brasoi (https://brasoi.in) featuring YouTube cooking tutorials, categories, interactive recipe cards, downloadable PDF cookbooks, and admin management.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

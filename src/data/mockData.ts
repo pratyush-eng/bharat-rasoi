@@ -514,12 +514,12 @@ export const INITIAL_DOWNLOAD_LOGS: DownloadLog[] = [
 ];
 
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
-  siteName: 'CHEF STUDIO',
-  tagline: 'Cooking Tutorials & Downloadable Recipe Books',
+  siteName: 'BRASOI',
+  tagline: 'Cooking Tutorials & Downloadable Recipe Books | brasoi.in',
   logoIcon: 'ChefHat',
   customLogoUrl: '',
   accentColor: '#FF5F1F',
-  announcementText: '🔥 New Printable PDF Cookbooks & Video Tutorials Released!',
+  announcementText: '🔥 Welcome to Brasoi (brasoi.in) — Download Free PDF Cookbooks & Video Guides!',
   showAnnouncement: true,
   heroAutoSlideEnabled: true,
   heroAutoSlideSpeed: 4500,
@@ -527,7 +527,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   youtubeUrl: 'https://youtube.com',
   instagramUrl: 'https://instagram.com',
   twitterUrl: 'https://twitter.com',
-  contactEmail: 'contact@chefstudio.com',
+  contactEmail: 'contact@brasoi.in',
   siteVisits: 28450
 };
 

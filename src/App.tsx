@@ -544,6 +544,7 @@ export default function App() {
           setActiveTab('admin');
         }}
         credentials={adminCredentials}
+        siteSettings={siteSettings}
       />
 
       {/* Latest Video Theater Modal */}
