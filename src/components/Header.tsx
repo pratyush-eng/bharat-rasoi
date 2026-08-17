@@ -20,8 +20,8 @@ import {
 import { Category, SiteSettings } from '../types';
 
 interface HeaderProps {
-  activeTab: 'gallery' | 'cookbooks' | 'admin';
-  setActiveTab: (tab: 'gallery' | 'cookbooks' | 'admin') => void;
+  activeTab: 'gallery' | 'cookbooks' | 'admin' | 'login';
+  setActiveTab: (tab: 'gallery' | 'cookbooks' | 'admin' | 'login') => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   selectedCategory: string | null;
@@ -29,7 +29,7 @@ interface HeaderProps {
   categories: Category[];
   siteSettings: SiteSettings;
   isAdminLoggedIn: boolean;
-  onOpenAdminLogin: () => void;
+  onOpenAdminLogin?: () => void;
   onOpenAiModal?: () => void;
   onToggleAdminSidebar?: () => void;
 }
@@ -167,30 +167,21 @@ export const Header: React.FC<HeaderProps> = ({
               Cookbooks & PDFs
             </button>
 
-            {/* Admin Portal Button */}
-            <button
-              onClick={handleAdminClick}
-              className={`ml-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 border ${
-                isAdminLoggedIn
-                  ? activeTab === 'admin'
+            {/* Admin Portal Button - Only visible when Admin is logged in */}
+            {isAdminLoggedIn && (
+              <button
+                onClick={handleAdminClick}
+                className={`ml-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                  activeTab === 'admin'
                     ? 'bg-brand-accent text-white border-brand-accent shadow-sm'
                     : 'bg-brand-accent-light text-[#1A1A1A] border-brand-accent-light hover:border-brand-accent'
-                  : 'bg-white text-gray-500 border-[#E5E5E1] hover:text-[#1A1A1A] hover:border-[#1A1A1A]'
-              }`}
-              title={isAdminLoggedIn ? "Open Admin Control Panel" : "Admin Login Portal"}
-            >
-              {isAdminLoggedIn ? (
-                <>
-                  <ShieldCheck className="w-4 h-4 text-brand-accent" />
-                  <span>Admin Control</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="w-3.5 h-3.5 text-gray-400" />
-                  <span>Admin Portal</span>
-                </>
-              )}
-            </button>
+                }`}
+                title="Open Admin Control Panel"
+              >
+                <ShieldCheck className="w-4 h-4 text-brand-accent" />
+                <span>Admin Control</span>
+              </button>
+            )}
           </nav>
 
           {/* Mobile menu trigger */}
@@ -205,15 +196,17 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            <button
-              onClick={handleAdminClick}
-              className={`p-2.5 rounded-full ${
-                activeTab === 'admin' ? 'bg-[#1A1A1A] text-white' : 'bg-gray-100 text-gray-700'
-              }`}
-              title="Admin Portal"
-            >
-              {isAdminLoggedIn ? <ShieldCheck className="w-4 h-4 text-brand-accent" /> : <Lock className="w-4 h-4" />}
-            </button>
+            {isAdminLoggedIn && (
+              <button
+                onClick={handleAdminClick}
+                className={`p-2.5 rounded-full ${
+                  activeTab === 'admin' ? 'bg-[#1A1A1A] text-white' : 'bg-gray-100 text-gray-700'
+                }`}
+                title="Admin Control"
+              >
+                <ShieldCheck className="w-4 h-4 text-brand-accent" />
+              </button>
+            )}
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -271,15 +264,17 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Download className="w-5 h-5" /> Download Cookbooks & PDFs
           </button>
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              handleAdminClick();
-            }}
-            className="w-full text-left px-4 py-3 rounded-2xl flex items-center gap-3 text-sm font-bold bg-gray-100 text-[#1A1A1A]"
-          >
-            <Lock className="w-5 h-5 text-brand-accent" /> {isAdminLoggedIn ? 'Admin Control Dashboard' : 'Admin Portal Access'}
-          </button>
+          {isAdminLoggedIn && (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleAdminClick();
+              }}
+              className="w-full text-left px-4 py-3 rounded-2xl flex items-center gap-3 text-sm font-bold bg-gray-100 text-[#1A1A1A]"
+            >
+              <ShieldCheck className="w-5 h-5 text-brand-accent" /> Admin Control Dashboard
+            </button>
+          )}
         </div>
       )}
     </header>

@@ -6,8 +6,8 @@ interface FooterProps {
   categories: Category[];
   onSelectCategory: (catId: string) => void;
   siteSettings: SiteSettings;
-  isAdminLoggedIn: boolean;
-  onOpenAdminLogin: () => void;
+  isAdminLoggedIn?: boolean;
+  onOpenAdminLogin?: () => void;
   onSubscribe?: (email: string) => Promise<void> | void;
 }
 
@@ -164,14 +164,6 @@ export const Footer: React.FC<FooterProps> = ({
           <p>&copy; {new Date().getFullYear()} {siteSettings.siteName || 'Chef Studio'} • All Rights Reserved.</p>
           
           <div className="flex items-center gap-4">
-            <button
-              onClick={onOpenAdminLogin}
-              className="text-gray-500 hover:text-[#1A1A1A] font-bold flex items-center gap-1 transition-colors"
-            >
-              {isAdminLoggedIn ? <ShieldCheck className="w-3.5 h-3.5 text-[#FF5F1F]" /> : <Lock className="w-3.5 h-3.5" />}
-              <span>{isAdminLoggedIn ? 'Admin Active' : 'Admin Portal Login'}</span>
-            </button>
-
             <p className="flex items-center gap-1 font-medium">
               Crafted for Home Chefs <Heart className="w-3 h-3 text-[#FF5F1F] fill-[#FF5F1F]" />
             </p>

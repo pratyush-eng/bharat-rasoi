@@ -41,6 +41,7 @@ import { VideoTheaterModal } from './components/VideoTheaterModal';
 import { CookbookHub } from './components/CookbookHub';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminLoginModal } from './components/AdminLoginModal';
+import { LoginPage } from './components/LoginPage';
 import { GeminiRecipeModal } from './components/GeminiRecipeModal';
 import { Footer } from './components/Footer';
 import { Bell, X, Play, Sparkles, Loader2, RefreshCw } from 'lucide-react';
@@ -175,8 +176,19 @@ export default function App() {
   });
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
 
-  // App Tabs
-  const [activeTab, setActiveTab] = useState<'gallery' | 'cookbooks' | 'admin'>('gallery');
+  // App Tabs & URL Routing Helper
+  const parseCurrentRoute = (): 'gallery' | 'cookbooks' | 'admin' | 'login' => {
+    if (typeof window === 'undefined') return 'gallery';
+    const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
+    const hash = window.location.hash.toLowerCase().replace(/^#\/?/, '').replace(/\/$/, '');
+    
+    if (path === '/login' || hash === 'login') return 'login';
+    if (path === '/admin' || hash === 'admin') return 'admin';
+    if (path === '/cookbooks' || hash === 'cookbooks') return 'cookbooks';
+    return 'gallery';
+  };
+
+  const [activeTab, setActiveTab] = useState<'gallery' | 'cookbooks' | 'admin' | 'login'>(() => parseCurrentRoute());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
@@ -186,16 +198,44 @@ export default function App() {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isMobileAdminSidebarOpen, setIsMobileAdminSidebarOpen] = useState(false);
 
-  // Handle Tab Navigation with Admin Protection
-  const handleSelectTab = (tab: 'gallery' | 'cookbooks' | 'admin') => {
+  // Sync state with browser URL navigation (popstate & hashchange)
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const route = parseCurrentRoute();
+      setActiveTab(route);
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
+
+  // Update URL history path gracefully
+  const updateRouteUrl = (tab: 'gallery' | 'cookbooks' | 'admin' | 'login') => {
+    if (typeof window !== 'undefined') {
+      const targetPath = tab === 'gallery' ? '/' : `/${tab}`;
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({ tab }, '', targetPath);
+      }
+    }
+  };
+
+  // Handle Tab Navigation with Admin Protection & URL sync
+  const handleSelectTab = (tab: 'gallery' | 'cookbooks' | 'admin' | 'login') => {
     if (tab === 'admin') {
       if (isAdminLoggedIn) {
         setActiveTab('admin');
+        updateRouteUrl('admin');
       } else {
-        setIsAdminLoginModalOpen(true);
+        setActiveTab('login');
+        updateRouteUrl('login');
       }
     } else {
       setActiveTab(tab);
+      updateRouteUrl(tab);
     }
   };
 
@@ -203,6 +243,7 @@ export default function App() {
     localStorage.removeItem('chef_studio_admin_session');
     setIsAdminLoggedIn(false);
     setActiveTab('gallery');
+    updateRouteUrl('gallery');
   };
 
   // Log download action to Firestore
@@ -359,6 +400,24 @@ export default function App() {
     return videoDownloads + bookDownloads;
   }, [recipes, cookbooks]);
 
+  // Dedicated Standalone Login Page view (e.g. https://brasoi.in/login)
+  if (activeTab === 'login' || (activeTab === 'admin' && !isAdminLoggedIn)) {
+    return (
+      <LoginPage
+        credentials={adminCredentials}
+        siteSettings={siteSettings}
+        isAdminLoggedIn={isAdminLoggedIn}
+        onLoginSuccess={() => {
+          setIsAdminLoggedIn(true);
+          handleSelectTab('admin');
+        }}
+        onNavigateHome={() => handleSelectTab('gallery')}
+        onNavigateAdmin={() => handleSelectTab('admin')}
+        onLogout={handleAdminLogout}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#1A1A1A] flex flex-col font-sans selection:bg-[#FF5F1F] selection:text-white">
       
@@ -373,7 +432,7 @@ export default function App() {
         categories={categories}
         siteSettings={siteSettings}
         isAdminLoggedIn={isAdminLoggedIn}
-        onOpenAdminLogin={() => setIsAdminLoginModalOpen(true)}
+        onOpenAdminLogin={() => handleSelectTab('login')}
         onOpenAiModal={() => setIsAiModalOpen(true)}
         onToggleAdminSidebar={() => setIsMobileAdminSidebarOpen(prev => !prev)}
       />
@@ -588,13 +647,6 @@ export default function App() {
         }}
         siteSettings={siteSettings}
         isAdminLoggedIn={isAdminLoggedIn}
-        onOpenAdminLogin={() => {
-          if (isAdminLoggedIn) {
-            setActiveTab('admin');
-          } else {
-            setIsAdminLoginModalOpen(true);
-          }
-        }}
         onSubscribe={handleSubscribe}
       />
 
