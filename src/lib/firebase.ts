@@ -131,10 +131,31 @@ export async function initializeDatabaseIfEmpty() {
 export function subscribeRecipes(callback: (recipes: RecipeVideo[]) => void) {
   return onSnapshot(collection(db, RECIPES_COL), (snapshot) => {
     const items: RecipeVideo[] = [];
+    const mockMap = new Map(INITIAL_VIDEOS.map(v => [v.id, v]));
+
     snapshot.forEach((doc) => {
-      items.push(doc.data() as RecipeVideo);
+      const data = doc.data() as RecipeVideo;
+      const initialMatch = mockMap.get(data.id);
+      
+      // If recipe has empty/missing ingredients or steps, merge from rich initial definition
+      const mergedRecipe: RecipeVideo = {
+        ...data,
+        ingredients: (data.ingredients && data.ingredients.length > 0)
+          ? data.ingredients
+          : (initialMatch?.ingredients || []),
+        steps: (data.steps && data.steps.length > 0)
+          ? data.steps
+          : (initialMatch?.steps || [])
+      };
+      items.push(mergedRecipe);
     });
-    callback(items);
+
+    // If Firestore collection has items, return them; if empty, fallback to initial videos
+    if (items.length > 0) {
+      callback(items);
+    } else {
+      callback(INITIAL_VIDEOS);
+    }
   });
 }
 

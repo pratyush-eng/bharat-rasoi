@@ -194,6 +194,12 @@ export default function App() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'latest' | 'popular' | 'quickest'>('latest');
 
+  // Pagination on scroll for gallery cards
+  const RECIPES_PER_PAGE = 6;
+  const [visibleCount, setVisibleCount] = useState<number>(RECIPES_PER_PAGE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
+
   const [activeVideoForTheater, setActiveVideoForTheater] = useState<RecipeVideo | null>(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isMobileAdminSidebarOpen, setIsMobileAdminSidebarOpen] = useState(false);
@@ -393,6 +399,42 @@ export default function App() {
     });
   }, [recipes, selectedCategory, selectedDifficulty, searchQuery, sortBy]);
 
+  // Reset pagination when filters, categories, search or sort changes
+  useEffect(() => {
+    setVisibleCount(RECIPES_PER_PAGE);
+  }, [selectedCategory, selectedDifficulty, searchQuery, sortBy]);
+
+  // Infinite scroll intersection observer
+  useEffect(() => {
+    if (activeTab !== 'gallery') return;
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && !isLoadingMore) {
+          if (visibleCount < filteredRecipes.length) {
+            setIsLoadingMore(true);
+            setTimeout(() => {
+              setVisibleCount((prev) => Math.min(prev + RECIPES_PER_PAGE, filteredRecipes.length));
+              setIsLoadingMore(false);
+            }, 300);
+          }
+        }
+      },
+      { rootMargin: '250px' }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeTab, visibleCount, filteredRecipes.length, isLoadingMore]);
+
+  // Sliced recipes for display
+  const visibleRecipes = useMemo(() => {
+    return filteredRecipes.slice(0, visibleCount);
+  }, [filteredRecipes, visibleCount]);
+
   // Total downloads count across channel
   const totalDownloads = useMemo(() => {
     const videoDownloads = recipes.reduce((acc, r) => acc + r.downloadsCount, 0);
@@ -472,18 +514,48 @@ export default function App() {
                 totalResults={filteredRecipes.length}
               />
 
-              {/* Recipe Cards Grid */}
+              {/* Recipe Cards Grid with Paging on Scroll */}
               {filteredRecipes.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
-                  {filteredRecipes.map((recipe) => (
-                    <RecipeCard
-                      key={recipe.id}
-                      recipe={recipe}
-                      onWatchVideo={(v) => setActiveVideoForTheater(v)}
-                      onDownloadPdf={handleDownloadSingleRecipe}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
+                    {visibleRecipes.map((recipe) => (
+                      <RecipeCard
+                        key={recipe.id}
+                        recipe={recipe}
+                        onWatchVideo={(v) => setActiveVideoForTheater(v)}
+                        onDownloadPdf={handleDownloadSingleRecipe}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Scroll Sentinel & Loading Indicator */}
+                  <div
+                    ref={loadMoreSentinelRef}
+                    className="py-10 flex flex-col items-center justify-center text-center space-y-3 min-h-[90px]"
+                  >
+                    {isLoadingMore && (
+                      <div className="flex items-center gap-2.5 px-5 py-2.5 bg-white border border-[#E5E5E1] rounded-full shadow-sm text-xs font-bold text-gray-700 animate-pulse">
+                        <Loader2 className="w-4 h-4 text-brand-accent animate-spin" />
+                        <span>Loading more recipe masterclasses...</span>
+                      </div>
+                    )}
+                    
+                    {!isLoadingMore && visibleCount < filteredRecipes.length && (
+                      <button
+                        onClick={() => setVisibleCount(prev => Math.min(prev + RECIPES_PER_PAGE, filteredRecipes.length))}
+                        className="px-6 py-2.5 bg-white hover:bg-[#F3F3F1] border border-[#E5E5E1] text-[#1A1A1A] hover:border-brand-accent text-xs font-extrabold rounded-full transition-all shadow-sm"
+                      >
+                        Load More Recipes ({visibleRecipes.length} of {filteredRecipes.length})
+                      </button>
+                    )}
+
+                    {!isLoadingMore && visibleCount >= filteredRecipes.length && filteredRecipes.length > RECIPES_PER_PAGE && (
+                      <p className="text-xs font-medium text-gray-400">
+                        You've reached the end of the collection • {filteredRecipes.length} recipes
+                      </p>
+                    )}
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-16 space-y-3 bg-white rounded-3xl border border-[#E5E5E1] my-8 shadow-sm">
                   <p className="text-gray-500 text-sm">No cooking tutorials matched your search criteria.</p>

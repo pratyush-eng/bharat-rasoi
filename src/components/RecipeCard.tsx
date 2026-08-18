@@ -98,15 +98,6 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           </p>
         </div>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1 pt-1">
-          {recipe.tags.slice(0, 3).map((tag, idx) => (
-            <span key={idx} className="bg-[#F3F3F1] text-gray-600 text-[10px] font-medium px-2 py-0.5 rounded-full">
-              #{tag}
-            </span>
-          ))}
-        </div>
-
         {/* Times & Difficulty Bar */}
         <div className="pt-3 border-t border-[#E5E5E1] flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-3">

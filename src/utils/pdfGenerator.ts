@@ -85,39 +85,55 @@ function wrapCanvasText(
  * and ZERO browser page unresponsiveness!
  */
 export async function downloadRecipePDF(recipe: RecipeVideo): Promise<void> {
+  // Ensure ingredients and steps exist with rich fallbacks if not populated
   const isHindi = /[\u0900-\u097F]/.test((recipe.title || '') + (recipe.description || ''));
+
+  const ingredients = (recipe.ingredients && recipe.ingredients.length > 0)
+    ? recipe.ingredients
+    : [
+        { id: 'i1', name: recipe.title || (isHindi ? 'मुख्य सामग्री' : 'Primary Ingredient'), amount: isHindi ? 'आवश्यकतानुसार' : 'As required', category: 'Produce' as const },
+        { id: 'i2', name: isHindi ? 'कुकिंग ऑयल / शुद्ध मक्खन' : 'Cooking Oil / Butter', amount: isHindi ? '2 बड़े चम्मच' : '2 tbsp', category: 'Dairy & Eggs' as const },
+        { id: 'i3', name: isHindi ? 'अदरक, लहसुन एवं ताज़ी हरी मिर्च' : 'Ginger, Garlic & Fresh Herbs', amount: isHindi ? '1 बड़ा चम्मच' : '1 tbsp', category: 'Produce' as const },
+        { id: 'i4', name: isHindi ? 'स्वादानुसार नमक एवं पिसे मसाले' : 'Salt & Selected Spices', amount: isHindi ? 'स्वादानुसार' : 'To taste', category: 'Pantry & Spices' as const },
+        { id: 'i5', name: isHindi ? 'ताज़ा हरा धनिया (गार्निशिंग हेतु)' : 'Fresh Garnish Herbs / Lemon', amount: isHindi ? 'सजावट हेतु' : 'For garnish', category: 'Produce' as const }
+      ];
+
+  const steps = (recipe.steps && recipe.steps.length > 0)
+    ? recipe.steps
+    : [
+        { stepNumber: 1, timestampSeconds: 0, title: isHindi ? 'सामग्री तैयारी व चॉपिंग' : 'Mise en Place & Prep', instruction: isHindi ? 'वीडियो निर्देशानुसार सभी ताज़ा सामग्री और मसालों को मापकर तैयार रखें।' : 'Gather, measure, and prep all fresh ingredients according to the video masterclass instructions.', tip: isHindi ? 'ताजी सामग्री से स्वाद बेहतरीन आता है।' : 'Prep ingredients before heating the pan.' },
+        { stepNumber: 2, timestampSeconds: 60, title: isHindi ? 'बेस तड़का व भूनना' : 'Sauté & Aromatics', instruction: isHindi ? 'पैन में तेल/मक्खन गरम करें और धीमी आंच पर खुशबू आने तक भूनें।' : 'Heat oil or butter in pan over medium flame; sauté aromatics until golden and fragrant.', tip: isHindi ? 'मसालों को जलने न दें।' : 'Keep heat moderate to prevent burning.' },
+        { stepNumber: 3, timestampSeconds: 180, title: isHindi ? 'मुख्य सामग्री पकाना' : 'Main Cooking & Simmer', instruction: isHindi ? 'मुख्य सामग्री और मसाले मिलाकर धीमी आंच पर ढककर अच्छी तरह पकने दें।' : 'Add main ingredients and seasonings, stirring thoroughly and simmering to infuse deep flavors.', tip: isHindi ? 'धीमी आंच पर पकाएं।' : 'Simmer covered for tender texture.' },
+        { stepNumber: 4, timestampSeconds: 320, title: isHindi ? 'गार्निश और परोसना' : 'Garnish & Serve', instruction: isHindi ? 'गरमा-गरम डिश को परोसें और ताज़े धनिए या गार्निश से सजाएं।' : 'Transfer to a warm serving dish, garnish with fresh herbs, and serve hot.', tip: isHindi ? 'गरमा-गरम परोसें।' : 'Best enjoyed immediately.' }
+      ];
+
+  // Measure steps text accurately
+  const width = 800;
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = width;
+  const tempCtx = tempCanvas.getContext('2d');
+  
+  let calculatedStepsHeight = 0;
+  if (tempCtx) {
+    tempCtx.font = '12px system-ui, "Noto Sans Devanagari", sans-serif';
+    steps.forEach((s) => {
+      const instLines = wrapCanvasText(tempCtx, s.instruction || '', width - 120);
+      const boxH = 46 + (instLines.length * 19) + (s.tip ? 28 : 0);
+      calculatedStepsHeight += boxH + 12;
+    });
+  } else {
+    calculatedStepsHeight = steps.length * 85;
+  }
+
+  const ingRows = Math.ceil(ingredients.length / 2);
+  const calculatedHeight = 440 + (ingRows * 42) + calculatedStepsHeight + 120;
+  const height = Math.max(1050, calculatedHeight);
 
   // Fetch thumbnail image with fast timeout
   const thumbnailImg = await loadCanvasImage(recipe.thumbnailUrl, 400);
 
   // Yield to UI thread briefly
   await new Promise((resolve) => setTimeout(resolve, 30));
-
-  const ingredients = recipe.ingredients && recipe.ingredients.length > 0
-    ? recipe.ingredients
-    : [
-        { id: 'i1', name: recipe.title || 'Main Ingredient', amount: 'As required', category: 'Produce' as const },
-        { id: 'i2', name: 'Salt & Cooking Oil / Spices', amount: 'To taste', category: 'Pantry & Spices' as const },
-      ];
-
-  const steps = recipe.steps && recipe.steps.length > 0
-    ? recipe.steps
-    : [
-        { stepNumber: 1, timestampSeconds: 0, title: 'Prep Work', instruction: 'Gather all required ingredients and measure accurately.' },
-        { stepNumber: 2, timestampSeconds: 60, title: 'Cooking Procedure', instruction: 'Follow YouTube video masterclass instructions for exact technique.' },
-        { stepNumber: 3, timestampSeconds: 300, title: 'Serve & Enjoy', instruction: 'Garnish appropriately and serve hot.' }
-      ];
-
-  const ingRows = Math.ceil(ingredients.length / 2);
-  const stepsHeight = steps.reduce((acc, step) => {
-    const instLen = (step.instruction || '').length;
-    const extraLines = Math.ceil(instLen / 70);
-    return acc + 48 + (extraLines * 18) + (step.tip ? 28 : 0);
-  }, 0);
-
-  const calculatedHeight = 480 + (ingRows * 42) + stepsHeight + 100;
-  const height = Math.max(1050, calculatedHeight);
-  const width = 800;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;

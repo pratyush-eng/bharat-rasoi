@@ -79,7 +79,7 @@ function formatYouTubeDurationSeconds(sec: number): string {
   return `${mins}:${rem.toString().padStart(2, "0")}`;
 }
 
-// Fetch YouTube video details (Title, Description, Views, Upload Date, Thumbnail, Channel, Duration)
+// Fetch YouTube video details (Title, Description, Views, Upload Date, Thumbnail, Channel, Duration, Subtitles/Captions)
 async function fetchYouTubeVideoDetails(urlOrId: string) {
   const videoId = extractYouTubeIdFromUrl(urlOrId) || "3AAdKl1UYZs";
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
@@ -91,6 +91,7 @@ async function fetchYouTubeVideoDetails(urlOrId: string) {
   let channelName = "";
   let duration = "10:00";
   let thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+  let transcriptText = "";
 
   try {
     // 1. Fetch YouTube oEmbed API for title and channel name
@@ -110,7 +111,7 @@ async function fetchYouTubeVideoDetails(urlOrId: string) {
     const htmlRes = await fetch(watchUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
         "Cookie": "SOCS=CAESEwgDEgk2MzE5NzE1NzQaAmVuIAEaBgiA_LyaBg; CONSENT=PENDING+999; PREF=tz=UTC&hl=en"
       }
     });
@@ -135,6 +136,30 @@ async function fetchYouTubeVideoDetails(urlOrId: string) {
             if (micro.publishDate || micro.uploadDate) uploadDate = cleanYouTubeDateString(micro.publishDate || micro.uploadDate);
             if (!viewsCount && micro.viewCount) viewsCount = parseInt(micro.viewCount, 10);
             if (!channelName && micro.ownerChannelName) channelName = micro.ownerChannelName;
+          }
+
+          // Try extracting captions/subtitles track
+          const captionTracks = p.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+          if (captionTracks && Array.isArray(captionTracks) && captionTracks.length > 0) {
+            const track = captionTracks.find((t: any) => t.languageCode === 'hi' || t.languageCode === 'en') || captionTracks[0];
+            if (track?.baseUrl) {
+              try {
+                const subRes = await fetch(track.baseUrl);
+                if (subRes.ok) {
+                  const subXml = await subRes.text();
+                  transcriptText = subXml
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/&amp;/g, '&')
+                    .replace(/&quot;/g, '"')
+                    .replace(/&#39;/g, "'")
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .substring(0, 3500);
+                }
+              } catch (e) {}
+            }
           }
         } catch (e) {}
       }
@@ -207,7 +232,8 @@ async function fetchYouTubeVideoDetails(urlOrId: string) {
     uploadDate,
     channelName: channelName || "Chef Studio",
     thumbnailUrl,
-    duration
+    duration,
+    transcriptText
   };
 }
 
@@ -315,20 +341,20 @@ app.post("/api/gemini/extract-recipe", async (req, res) => {
     });
 
     const contextInput = ytDetails 
-      ? `YouTube Title: "${ytDetails.title}", Description: "${ytDetails.description}", Upload Date: "${ytDetails.uploadDate}", Views: ${ytDetails.viewsCount}, User Prompt: "${promptText || ''}"`
+      ? `YouTube Title: "${ytDetails.title}", Channel: "${ytDetails.channelName}", Description: "${ytDetails.description}", Upload Date: "${ytDetails.uploadDate}", Views: ${ytDetails.viewsCount}, Video Voice Transcript: "${ytDetails.transcriptText || 'Not available'}", User Prompt: "${promptText || ''}"`
       : `User Prompt/Title: "${promptText}"`;
 
     const langInstruction = isHindi
-      ? `CRITICAL MANDATE: You MUST generate ALL recipe details completely in rich, authentic Hindi language using Devanagari script (हिंदी भाषा).
+      ? `CRITICAL MANDATE: You MUST generate ALL recipe details completely in rich, authentic Hindi language using Devanagari script (हिंदी भाषा), reflecting the chef's voice and narration in the video tutorial.
 - Title: Clear, attractive Hindi dish title (e.g. "वेज चीज़ बॉल्स रेसिपी | Vegetable Cheese Balls")
-- Description: 2-3 engaging sentences describing the taste, texture, and serving suggestions in Hindi.
+- Description: 2-3 engaging sentences describing the taste, texture, and cooking method in Hindi.
 - CategoryName: e.g. "स्नैक्स एवं स्टार्टर्स" or "स्ट्रीट फूड"
 - ChefNote: Secret pro-chef tip for perfect crispy results in Hindi.
-- Ingredients: Provide 6-10 realistic ingredients extracted/inferred from the video dish with exact measurements in Hindi (e.g. "200 ग्राम प्रोसेस्ड या मोज़ेरेला चीज़", "2 उबले और मैश किए आलू", "1/2 कप उबले मकई के दाने", "2 बड़े चम्मच कॉर्नफ्लोर", "1 कप ब्रेड क्रम्ब्स (पावर कोटिंग)", "1 छोटा चम्मच कुटी लाल मिर्च (चिली फ्लेक्स)", "स्वादानुसार नमक और काली मिर्च", "तलने के लिए तेल").
-- Steps: Provide 5-7 clear, sequential step-by-step cooking instructions in Hindi (e.g., Step 1: आलू और सब्जियों का मिश्रण तैयार करना, Step 2: चीज़ स्टफिंग और बॉल्स का आकार देना, Step 3: कॉर्नफ्लोर घोल और ब्रेडक्रम्ब्स की कोटिंग, Step 4: मध्यम आंच पर सुनहरा होने तक तलना, Step 5: गरमा-गरम परोसना). Do NOT return generic placeholders.`
-      : `CRITICAL MANDATE: Generate rich, detailed culinary instructions in clear English.
-- Provide 6-10 realistic ingredients with exact quantities.
-- Provide 5-7 sequential, easy-to-follow cooking steps with clear instructions and chef tips. Do NOT return generic placeholders.`;
+- Ingredients: Provide 6-10 realistic ingredients extracted/inferred from the video voice/subtitles with exact measurements in Hindi (e.g. "200 ग्राम प्रोसेस्ड या मोज़ेरेला चीज़", "2 उबले और मैश किए आलू", "1/2 कप उबले मकई के दाने", "2 बड़े चम्मच कॉर्नफ्लोर", "1 कप ब्रेड क्रम्ब्स (पावर कोटिंग)", "1 छोटा चम्मच कुटी लाल मिर्च (चिली फ्लेक्स)", "स्वादानुसार नमक और काली मिर्च", "तलने के लिए तेल").
+- Steps: Provide 5-7 clear, sequential step-by-step cooking instructions in Hindi as spoken in the video voice (e.g., Step 1: आलू और सब्जियों का मिश्रण तैयार करना, Step 2: चीज़ स्टफिंग और बॉल्स का आकार देना, Step 3: कॉर्नफ्लोर घोल और ब्रेडक्रम्ब्स की कोटिंग, Step 4: मध्यम आंच पर सुनहरा होने तक तलना, Step 5: गरमा-गरम परोसना). Do NOT return generic placeholders.`
+      : `CRITICAL MANDATE: Generate rich, detailed culinary instructions in clear English as guided by the chef's voice and narration in the tutorial.
+- Provide 6-10 realistic, accurate ingredients with exact quantities.
+- Provide 5-7 sequential, easy-to-follow cooking steps with clear instructions and chef tips matching the video. Do NOT return generic placeholders.`;
 
     const response = await callGeminiWithRetry(ai, {
       model: "gemini-3.7-flash",
